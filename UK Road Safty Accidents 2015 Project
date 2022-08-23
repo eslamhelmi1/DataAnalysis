@@ -1,0 +1,133 @@
+-- Tables_Creation
+-- ===================================================
+
+CREATE TABLE ACCIDENTS (ACCIDENT_INDEX VARCHAR(50),
+LOCATION_EASTING_OSGR VARCHAR(50),
+LOCATION_NORTHING_OSGR VARCHAR(50),Longitude decimal(9,6),
+Latitude decimal(9,6),
+Police_Force Float,
+Accident_Severity Float,
+NUMBER_OF_VEHICLES Float,
+Number_of_Casualties Float,
+acc_Date varchar(20),
+Day_of_Week Float,
+acc_Time Time,
+Local_Authority_District Float,
+Local_Authority_Highway varchar(50),
+st_Road_Class Float,
+st_Road_Number Float,
+Road_Type Float,
+Speed_limit Float,
+Junction_Detail Float,
+Junction_Control Float,
+nd_Road_Class Float,
+nd_Road_Number Float,
+Pedestrian_CrossingHuman_Control Float,
+Pedestrian_CrossingPhysical_Facilities Float,
+Light_Conditions Float,
+Weather_Conditions Float,
+Road_Surface_Conditions Float,
+Special_Conditions_at_Site Float,
+Carriageway_Hazards Float,
+Urban_or_Rural_Area Float,
+Did_Police_Officer_Attend_Scene_of_Accident Float,
+LSOA_of_Accident_Location varchar(50));
+
+CREATE TABLE vehicles(Accident_Index varchar(50),
+Vehicle_Reference Float,
+Vehicle_Type Float,
+Towing_and_Articulation Float,
+Vehicle_Manoeuvre Float,
+Vehicle_LocationRestricted_Lane Float,
+Junction_Location Float,
+Skidding_and_Overturning Float,
+Hit_Object_in_Carriageway Float,
+Vehicle_Leaving_Carriageway Float,
+Hit_Object_off_Carriageway Float,
+st_Point_of_Impact Float,
+Was_Vehicle_Left_Hand_Drive Float,
+Journey_Purpose_of_Driver Float,
+Sex_of_Driver Float,
+Age_of_Driver Float,
+Age_Band_of_Driver Float,
+Engine_Capacity_CC Float,
+Propulsion_Code Float,
+Age_of_Vehicle Float,
+Driver_IMD_Decile Float,
+Driver_Home_Area_Type Float,
+Vehicle_IMD_Decile Float);
+
+CREATE TABLE VEHICLES_TYPES (VEHICLE_CODE float, VEHICLE_LABEL VARCHAR(50));
+
+CREATE TABLE SEVERITY (SEVER_CODE float, SEVER_LABEL VARCHAR(10));
+
+COPY VEHICLES_TYPES
+FROM 'D:/Courses/NEW/ZZ_Portfolio/UK Road Safty Accidents 2015 Project/vehicle_types.csv'
+DELIMITER ',' CSV HEADER;
+
+COPY VEHICLES
+FROM 'D:/Courses/NEW/ZZ_Portfolio/UK Road Safty Accidents 2015 Project/vehicles_2015.csv'
+DELIMITER ',' CSV HEADER;
+
+COPY ACCIDENTS
+FROM 'D:/Courses/NEW/ZZ_Portfolio/UK Road Safty Accidents 2015 Project/accidents_2015.csv'
+DELIMITER ',' CSV HEADER;
+
+COPY SEVERITY
+FROM 'D:/Courses/NEW/ZZ_Portfolio/UK Road Safty Accidents 2015 Project/severity.csv'
+DELIMITER ',' CSV HEADER;
+
+-- ============================================================
+-- Calcualting Total Number of Accidents & Average Severity for each MOTORCYCLE Type
+-- ============================================================
+
+SELECT VT.VEHICLE_LABEL AS MOTORCYCLE_TYPE,
+	AVG(ACCIDENT_SEVERITY):: DECIMAL(4,2) AS AVG_SEVERITY,
+	COUNT(V.ACCIDENT_INDEX) AS NO_OF_ACC
+FROM ACCIDENTS S
+JOIN VEHICLES V ON S.ACCIDENT_INDEX = V.ACCIDENT_INDEX
+JOIN VEHICLES_TYPES VT ON VT.VEHICLE_CODE = V.VEHICLE_TYPE
+WHERE LOWER(VT.VEHICLE_LABEL) LIKE '%motor%'
+GROUP BY VT.VEHICLE_LABEL
+order by AVG_Severity;
+
+/* Results indicate a very low number od accidents for electric motorcycles and much lower severity compared to other types which means that it is moer likely to be safe to use it compared to other motorcycle
+-- It also may mean there is no much spread for this type so this must be validated by the total number of lincesed bykes 
+-- Highest severities comes with the vehicles of the lowest power (50cc and under) -- it may indicate that those types lacks safety   
+*/
+
+-- ============================================================
+-- Calcualting the Average Severity by Vehicle Type
+-- ============================================================
+
+SELECT VT.VEHICLE_LABEL AS VEHICLE_TYPE,
+	AVG(ACCIDENT_SEVERITY):: DECIMAL(4,2) AS AVG_SEVERITY,
+	COUNT(V.ACCIDENT_INDEX) AS NO_OF_ACC
+FROM ACCIDENTS S
+JOIN VEHICLES V ON S.ACCIDENT_INDEX = V.ACCIDENT_INDEX
+JOIN VEHICLES_TYPES VT ON VT.VEHICLE_CODE = V.VEHICLE_TYPE
+GROUP BY VT.VEHICLE_LABEL
+ORDER BY AVG_SEVERITY;
+
+-- ============================================================
+-- Calcualting the Median Severity Value of Accidents Caused by Various Motorcycles
+-- ============================================================
+
+SELECT VT.VEHICLE_LABEL AS MOTORCYCLE_TYPE,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY S.ACCIDENT_SEVERITY)::DECIMAL (4,2) as Median_Severity
+FROM ACCIDENTS S
+JOIN VEHICLES V ON S.ACCIDENT_INDEX = V.ACCIDENT_INDEX
+JOIN VEHICLES_TYPES VT ON VT.VEHICLE_CODE = V.VEHICLE_TYPE
+WHERE LOWER(VT.VEHICLE_LABEL) LIKE '%motor%'
+GROUP BY MOTORCYCLE_TYPE;
+
+
+SELECT VT.VEHICLE_LABEL AS MOTORCYCLE_TYPE,
+   S.ACCIDENT_SEVERITY,
+   Count (VT.VEHICLE_LABEL)
+FROM ACCIDENTS S
+JOIN VEHICLES V ON S.ACCIDENT_INDEX = V.ACCIDENT_INDEX
+JOIN VEHICLES_TYPES VT ON VT.VEHICLE_CODE = V.VEHICLE_TYPE
+WHERE LOWER(VT.VEHICLE_LABEL) LIKE '%motor%'
+Group BY VT.VEHICLE_LABEL, S.ACCIDENT_SEVERITY
+ORDER BY MOTORCYCLE_TYPE, S.ACCIDENT_SEVERITY;
